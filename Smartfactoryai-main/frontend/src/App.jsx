@@ -13,7 +13,7 @@ if (!document.getElementById('tailwind-cdn')) {
   document.head.appendChild(script);
 }
 
-const API_URL = window.location.origin;
+const API_URL = `http://${window.location.hostname}:5000`;
 
 const reasonOptions = {
   Maschine: [
