@@ -29,8 +29,13 @@ const __dirname = path.dirname(__filename);
 app.use(cors());
 app.use(express.json());
 
-// Sicherer, absoluter Pfad im Docker-Backend-Verzeichnis
-const STORAGE_FILE = path.join(__dirname, 'shopfloor_storage.json');
+const STORAGE_DIR = path.join(__dirname, 'shopfloor_data');
+const STORAGE_FILE = path.join(STORAGE_DIR, 'shopfloor_storage.json');
+
+// Erstellt den Backup-Ordner automatisch, falls er fehlt
+if (!fs.existsSync(STORAGE_DIR)) {
+  fs.mkdirSync(STORAGE_DIR, { recursive: true });
+}
 
 const defaultData = {
   "drehen": {
@@ -368,19 +373,28 @@ app.post('/api/ticket/:id/close', (req, res) => {
   res.json(ticket);
 });
 
-// === COUPLING FRONTEND DIST (Abgestimmt auf deine Docker-Pfade) ===
-const DIST_PATH = path.resolve(__dirname, '../frontend/dist');
+// =========================================================================
+// ANPASSUNG 3: Flexibler Fallback für React-Build-Pfad (dist ODER build)
+// =========================================================================
+const DETECTED_DIST = fs.existsSync(path.resolve(__dirname, '../frontend/dist')) 
+  ? path.resolve(__dirname, '../frontend/dist') 
+  : path.resolve(__dirname, '../frontend/build');
 
-if (fs.existsSync(DIST_PATH)) {
-  app.use(express.static(DIST_PATH));
+if (fs.existsSync(DETECTED_DIST)) {
+  app.use(express.static(DETECTED_DIST));
   app.get('*', (req, res) => {
-    if (req.originalUrl.startsWith('/api')) return res.status(404).json({ error: "API nicht gefunden" });
-    res.sendFile(path.join(DIST_PATH, 'index.html'));
+    if (req.originalUrl.startsWith('/api')) return res.status(404).json({ error: "API-Endpunkt nicht gefunden" });
+    res.sendFile(path.join(DETECTED_DIST, 'index.html'));
   });
 } else {
-  app.get('/', (req, res) => res.send("API läuft stabil. Frontend wird geladen."));
+  app.get('/', (req, res) => {
+    res.status(500).send("🚨 Systemfehler: Der statische Frontend-Ordner (dist/build) wurde nicht gefunden. Bitte 'npm run build' ausführen.");
+  });
 }
 
 app.listen(PORT, '0.0.0.0', () => {
+  console.log(`===================================================`);
   console.log(`🚀 FactoryAI Server erfolgreich gestartet auf Port ${PORT}`);
+  console.log(`💾 Datenbankordner für IT-Backup: ${STORAGE_DIR}`);
+  console.log(`===================================================`);
 });
