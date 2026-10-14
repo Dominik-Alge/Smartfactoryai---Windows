@@ -1,7 +1,5 @@
+SMARTFACTORYAI — WINDOWS SERVER DEPLOYMENT
 
-===============================================================================
-               SMARTFACTORYAI — WINDOWS SERVER DEPLOYMENT
-===============================================================================
 
 PROJEKT: Shopfloor Management Panel (Shopfloor-Maske)
 -------------------------------------------------------------------------------
