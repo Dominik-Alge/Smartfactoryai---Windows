@@ -1,96 +1,202 @@
-# SMARTFACTORYAI — WINDOWS SERVER DEPLOYMENT
-## PROJEKT: Shopfloor Management Panel (Shopfloor-Maske)
+SMARTFACTORYAI – WINDOWS SERVER DEPLOYMENT
 
-Dieses Projekt ist eine digitale Shopfloor-Maske zur Online-Erfassung von Maschinenstati, Kriterienübersichten (Ampelsystem) und zur Bündelung von Notizen für Gruppentreffen und Schichtübergaben.
+PROJEKT
+Shopfloor Management Panel (Shopfloor-Maske)
 
----
+Die Anwendung dient zur digitalen Erfassung von Maschinenstati, Kriterienübersichten (Ampelsystem), Schichtübergaben sowie zur Verwaltung von Shopfloor- und Verbesserungsmassnahmen.
 
-### [1] ARCHITEKTUR & STRUKTUR (LAYER-SYSTEM)
-Das System ist so aufgebaut, dass Informationen über verschiedene Ebenen gebündelt werden können:
-- **GRUPPE:** Top-Level Produktionsübersicht
-- **INSEL:** Zusammenfassung mehrerer Arbeitsplätze
-- **MASCHINE:** Detaillierte Matrixansicht des Arbeitsplatzes
+═══════════════════════════════════════════════════
+1. SYSTEMAUFBAU
+═══════════════════════════════════════════════════
 
-### [2] TECH-STACK
-- **Frontend:** React (Vite-Kompiliert)
-- **Backend:** Node.js / Express (stellt API & Frontend kombiniert bereit)
-- **Infrastruktur:** Nativer Windows-Server-Betrieb (On-Premise) – **Kein Docker erforderlich!**
-- **Datenbank:** JSON-File Persistence (`shopfloor_storage.json`)
+Die Anwendung ist hierarchisch aufgebaut:
 
-### [3] PROJEKTSTRUKTUR
-```text
-Smartfactoryai/
-├── starten.bat             <-- Startet das System per Doppelklick unter Windows
-├── README.md               <-- Diese Dokumentation
+GRUPPE
+→ Produktionsübersicht einer gesamten Gruppe
+
+INSEL
+→ Zusammenfassung mehrerer Arbeitsplätze
+
+MASCHINE
+→ Detailansicht eines einzelnen Arbeitsplatzes
+
+═══════════════════════════════════════════════════
+2. TECHNISCHE ARCHITEKTUR
+═══════════════════════════════════════════════════
+
+Frontend:
+- React
+- Vite (Build-System)
+
+Backend:
+- Node.js
+- Express
+
+Datenspeicherung:
+- JSON-Datei (shopfloor_storage.json)
+
+Betriebsmodell:
+- On-Premise auf Windows Server
+- Kein Docker erforderlich
+
+Hinweis:
+Das React-Frontend wird einmalig erstellt (Build) und anschliessend direkt durch den Express-Server bereitgestellt. Im Produktivbetrieb läuft nur noch das Backend.
+
+═══════════════════════════════════════════════════
+3. PROJEKTSTRUKTUR
+═══════════════════════════════════════════════════
+
+Smartfactoryai
 │
-├── backend/
-│   ├── server.js           <-- Node.js Express Server (API & statische Dateiausgabe)
-│   ├── package.json        <-- Backend-Abhängigkeiten
-│   └── shopfloor_data/     <-- AUTOMATISCH ERSTELLT (Hier liegt das IT-Backup)
+├── starten.bat
+├── README.md
+│
+├── backend
+│   ├── server.js
+│   ├── package.json
+│   └── shopfloor_data
 │       └── shopfloor_storage.json
 │
-└── frontend/
-    ├── dist/               <-- Produktionsdateien des Frontends (erzeugt via npm run build)
-    ├── src/                <-- Quellcode des React-Frontends
-    └── package.json        <-- Frontend-Abhängigkeiten
-```
+└── frontend
+    ├── dist
+    ├── src
+    ├── package.json
+    └── vite.config.js
 
----
+Beschreibung:
 
-### [4] INSTALLATION AUF DEM WINDOWS-FIRMENSERVER
+starten.bat
+→ Startet die Anwendung unter Windows
 
-#### VORAUSSETZUNGEN:
-1. **Node.js (LTS-Version):** Muss systemweit auf dem Windows Server installiert sein.
-2. Eine Eingabeaufforderung (CMD) oder PowerShell mit Administratorrechten.
+backend/server.js
+→ Node.js-Server für API und Frontend-Auslieferung
 
-#### SCHRITT-FÜR-SCHRITT-ANLEITUNG:
+backend/shopfloor_data
+→ Persistente Datenspeicherung und Backup-Ordner
 
-**Schritt 1: Paket entpacken**
-Kopiere das Projektverzeichnis auf den Server und lege es im Hauptverzeichnis ab: `C:\Smartfactoryai`.
+frontend/dist
+→ Kompilierte Produktionsversion des Frontends
 
-**Schritt 2: Frontend einmalig für Produktion bauen**
-Öffne die Windows-Eingabeaufforderung (CMD), wechsle in den Frontend-Ordner und baue die Oberflächen-Dateien:
-```cmd
+═══════════════════════════════════════════════════
+4. INSTALLATION AUF DEM WINDOWS SERVER
+═══════════════════════════════════════════════════
+
+Voraussetzungen:
+
+- Windows Server
+- Node.js LTS Version
+- Administratorrechte
+
+Schritt 1: Projekt bereitstellen
+
+Projekt nach folgendem Pfad kopieren:
+
+C:\Smartfactoryai
+
+Schritt 2: Backend-Abhängigkeiten installieren
+
+cd C:\Smartfactoryai\backend
+npm install
+
+Schritt 3: Frontend-Abhängigkeiten installieren und Build erstellen
+
 cd C:\Smartfactoryai\frontend
 npm install
 npm run build
-```
-*(Hinweis: Erzeugt den für das Backend erforderlichen `frontend/dist`-Ordner).*
 
-**Schritt 3: Anwendung starten**
-Navigiere zu `C:\Smartfactoryai` und starte das System per Doppelklick auf die **`starten.bat`**.
+Hinweis:
+Der Build erzeugt den Ordner:
 
-**Schritt 4: Erreichbarkeit prüfen**
-Die Anwendung ist nun im Firmennetzwerk unter der Port-Freigabe des Windows-Servers erreichbar:
-👉 **URL:** `http://<SERVER-IP>:5000`
+frontend\dist
 
-*WICHTIGER HINWEIS FÜR DIE IT:* Der **Port 5000** muss in der Windows-Firewall für eingehende Verbindungen (Inbound Rule) freigegeben sein!
+Dieser wird später vom Backend automatisch ausgeliefert.
 
----
+Schritt 4: Anwendung starten
 
-### [5] PRODUKTIONS-BETRIEB: EINRICHTUNG ALS WINDOWS-DIENST
-Damit die Anwendung permanent im Hintergrund läuft und nach einem Server-Neustart automatisch mit hochfährt, wird die App als offizieller Windows-Service registriert.
+cd C:\Smartfactoryai\backend
+node server.js
 
-1. Öffne die Windows-Eingabeaufforderung (CMD) als **Administrator**.
-2. Installiere das Hilfswerkzeug global:
-   ```cmd
-   npm install -g qckwinsvc
-   ```
-3. Starte den Einrichtungs-Assistenten:
-   ```cmd
-   qckwinsvc
-   ```
-4. Beantworte die Fragen des Assistenten wie folgt:
-   - **Service Name:** `SmartfactoryAI_Shopfloor`
-   - **Service Description:** `Shopfloor Management Panel Backend & Frontend`
-   - **Node Script Path:** `C:\Smartfactoryai\backend\server.js`
+Alternativ:
 
-Der Dienst ist danach in der Windows-Diensteverwaltung (`services.msc`) aktiv und startet vollautomatisch beim Booten.
+Doppelklick auf starten.bat
 
----
+═══════════════════════════════════════════════════
+5. ZUGRIFF AUF DIE ANWENDUNG
+═══════════════════════════════════════════════════
 
-### [6] DATENSICHERHEIT & BACKUP (FÜR DIE IT)
-Das Backend erstellt beim ersten Start automatisch die Datei `shopfloor_storage.json` im Ordner `.\backend\shopfloor_data`.
+Nach erfolgreichem Start ist die Anwendung erreichbar unter:
 
-- **Backup-Strategie:** Für die tägliche Datensicherung muss die IT lediglich folgenden Ordner in die Backup-Routine (z.B. Veeam) aufnehmen:
-  👉 **PFAD:** `C:\Smartfactoryai\backend\shopfloor_data`
+http://<SERVER-IP>:5000
+
+Firewall-Anforderung:
+
+Der TCP-Port 5000 muss für eingehende Verbindungen freigegeben sein.
+
+═══════════════════════════════════════════════════
+6. BETRIEB ALS WINDOWS-DIENST
+═══════════════════════════════════════════════════
+
+Für den automatischen Start nach einem Serverneustart kann die Anwendung als Windows-Dienst eingerichtet werden.
+
+Installation des Dienst-Tools:
+
+npm install -g qckwinsvc
+
+Dienst erstellen:
+
+qckwinsvc
+
+Konfiguration:
+
+Service Name:
+SmartfactoryAI_Shopfloor
+
+Service Description:
+Shopfloor Management Panel
+
+Node Script Path:
+C:\Smartfactoryai\backend\server.js
+
+Nach der Einrichtung startet die Anwendung automatisch mit dem Server.
+
+═══════════════════════════════════════════════════
+7. DATENSICHERUNG
+═══════════════════════════════════════════════════
+
+Alle Betriebsdaten werden in folgendem Verzeichnis gespeichert:
+
+C:\Smartfactoryai\backend\shopfloor_data
+
+Datei:
+
+shopfloor_storage.json
+
+Empfehlung:
+
+Das Verzeichnis
+
+C:\Smartfactoryai\backend\shopfloor_data
+
+soll in die bestehende Backup-Lösung (z.B. Veeam) aufgenommen werden.
+
+═══════════════════════════════════════════════════
+8. WARTUNG
+═══════════════════════════════════════════════════
+
+Frontend-Änderungen:
+
+cd C:\Smartfactoryai\frontend
+npm run build
+
+Backend-Neustart:
+
+cd C:\Smartfactoryai\backend
+node server.js
+
+Im Normalbetrieb sind keine manuellen Eingriffe an der Datenstruktur erforderlich.
+
+═══════════════════════════════════════════════════
+STATUS
+═══════════════════════════════════════════════════
+
+Die Anwendung wurde erfolgreich auf einem Windows-System ohne Docker getestet und validiert.
