@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const API_URL = window.location.origin;
+const API_URL = `http://${window.location.hostname}:5000`;
 
 export default function ActionEngine() {
   // Tabs für Hauptansicht: "active" (Aktive Vorfälle) oder "history" (Historie & Auswertung)
