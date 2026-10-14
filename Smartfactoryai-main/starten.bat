@@ -1,10 +1,18 @@
 @echo off
 TITLE FactoryAI Shopfloor Server
 echo ===================================================
-echo Starte FactoryAI Backend & Frontend unter Windows...
+echo Starte FactoryAI Backend ^& Frontend unter Windows...
 echo ===================================================
 
-cd backend
-call npm install
-npm start
+:: Wechselt sicher in das richtige Verzeichnis, egal von wo es gestartet wird
+cd /d "C:\Smartfactoryai\backend"
+
+:: Installiert fehlende Pakete (beim ersten Start)
+echo Pruefe und installiere API-Abhaengigkeiten...
+call npm install --production
+
+:: Startet den Server direkt
+echo Starte den Node.js Express Server...
+node server.js
+
 pause
