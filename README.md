@@ -1,53 +1,96 @@
-# Smartfactoryai---Windows
-Shopfloor Management Panel - Shopfloor-Maske
+# SMARTFACTORYAI — WINDOWS SERVER DEPLOYMENT
+## PROJEKT: Shopfloor Management Panel (Shopfloor-Maske)
+
 Dieses Projekt ist eine digitale Shopfloor-Maske zur Online-Erfassung von Maschinenstati, Kriterienübersichten (Ampelsystem) und zur Bündelung von Notizen für Gruppentreffen und Schichtübergaben.
-
-## 🚀 Architektur & Struktur (Layer-System)
-Das System ist so aufgebaut, dass Informationen über verschiedene Ebenen gebündelt werden können:
-- **Gruppe** (Top-Level Produktionsübersicht)
-- **Insel** (Zusammenfassung mehrerer Arbeitsplätze)
-- **Maschine / Arbeitsplatz** (Detaillierte Matrixansicht)
-
-## 🛠️ Tech-Stack
-- **Frontend:** React
-- **Backend:** Node.js / Express
-- **Infrastruktur:** Docker & Docker Compose (für On-Premise Betriebs-Server)
-- **Datenbank:** JSON-File Persistence (`shopfloor_storage.json`)
-
-## 📁 Projektstruktur
-- `backend/server.js` - Der Node.js Express Server (API-Endpunkte für Stati und Notizen)
-- `backend/package.json` - Verwaltung der Node.js Abhängigkeiten
-- `frontend/` - Quellcode des React-Frontends
-- `Dockerfile` - Multi-Stage Konfiguration zum Bauen von Frontend & Backend
-- `docker-compose.yml` - Orchestrierung für den Start auf dem lokalen Server
 
 ---
 
-## 💻 Installation auf dem Firmenserver (On-Premise)
+### [1] ARCHITEKTUR & STRUKTUR (LAYER-SYSTEM)
+Das System ist so aufgebaut, dass Informationen über verschiedene Ebenen gebündelt werden können:
+- **GRUPPE:** Top-Level Produktionsübersicht
+- **INSEL:** Zusammenfassung mehrerer Arbeitsplätze
+- **MASCHINE:** Detaillierte Matrixansicht des Arbeitsplatzes
 
-### Voraussetzungen
-Auf dem Zielserver muss **Docker** und **Docker Compose** installiert sein.
+### [2] TECH-STACK
+- **Frontend:** React (Vite-Kompiliert)
+- **Backend:** Node.js / Express (stellt API & Frontend kombiniert bereit)
+- **Infrastruktur:** Nativer Windows-Server-Betrieb (On-Premise) – **Kein Docker erforderlich!**
+- **Datenbank:** JSON-File Persistence (`shopfloor_storage.json`)
 
-### Schritt-für-Schritt-Installation
+### [3] PROJEKTSTRUKTUR
+```text
+Smartfactoryai/
+├── starten.bat             <-- Startet das System per Doppelklick unter Windows
+├── README.md               <-- Diese Dokumentation
+│
+├── backend/
+│   ├── server.js           <-- Node.js Express Server (API & statische Dateiausgabe)
+│   ├── package.json        <-- Backend-Abhängigkeiten
+│   └── shopfloor_data/     <-- AUTOMATISCH ERSTELLT (Hier liegt das IT-Backup)
+│       └── shopfloor_storage.json
+│
+└── frontend/
+    ├── dist/               <-- Produktionsdateien des Frontends (erzeugt via npm run build)
+    ├── src/                <-- Quellcode des React-Frontends
+    └── package.json        <-- Frontend-Abhängigkeiten
+```
 
-1. **Paket entpacken:**
-   Kopiere die ZIP-Datei auf den Server und entpacke sie in ein beliebiges Verzeichnis (z. B. `/opt/factoryai`).
-   ```bash
-   cd /opt/factoryai
+---
+
+### [4] INSTALLATION AUF DEM WINDOWS-FIRMENSERVER
+
+#### VORAUSSETZUNGEN:
+1. **Node.js (LTS-Version):** Muss systemweit auf dem Windows Server installiert sein.
+2. Eine Eingabeaufforderung (CMD) oder PowerShell mit Administratorrechten.
+
+#### SCHRITT-FÜR-SCHRITT-ANLEITUNG:
+
+**Schritt 1: Paket entpacken**
+Kopiere das Projektverzeichnis auf den Server und lege es im Hauptverzeichnis ab: `C:\Smartfactoryai`.
+
+**Schritt 2: Frontend einmalig für Produktion bauen**
+Öffne die Windows-Eingabeaufforderung (CMD), wechsle in den Frontend-Ordner und baue die Oberflächen-Dateien:
+```cmd
+cd C:\Smartfactoryai\frontend
+npm install
+npm run build
+```
+*(Hinweis: Erzeugt den für das Backend erforderlichen `frontend/dist`-Ordner).*
+
+**Schritt 3: Anwendung starten**
+Navigiere zu `C:\Smartfactoryai` und starte das System per Doppelklick auf die **`starten.bat`**.
+
+**Schritt 4: Erreichbarkeit prüfen**
+Die Anwendung ist nun im Firmennetzwerk unter der Port-Freigabe des Windows-Servers erreichbar:
+👉 **URL:** `http://<SERVER-IP>:5000`
+
+*WICHTIGER HINWEIS FÜR DIE IT:* Der **Port 5000** muss in der Windows-Firewall für eingehende Verbindungen (Inbound Rule) freigegeben sein!
+
+---
+
+### [5] PRODUKTIONS-BETRIEB: EINRICHTUNG ALS WINDOWS-DIENST
+Damit die Anwendung permanent im Hintergrund läuft und nach einem Server-Neustart automatisch mit hochfährt, wird die App als offizieller Windows-Service registriert.
+
+1. Öffne die Windows-Eingabeaufforderung (CMD) als **Administrator**.
+2. Installiere das Hilfswerkzeug global:
+   ```cmd
+   npm install -g qckwinsvc
    ```
-
-2. **Anwendung bauen und starten:**
-   Führe den folgenden Befehl im Terminal aus, um das System lokal auf dem Server zu bauen und im Hintergrund zu starten:
-   ```bash
-   docker compose up -d --build
+3. Starte den Einrichtungs-Assistenten:
+   ```cmd
+   qckwinsvc
    ```
+4. Beantworte die Fragen des Assistenten wie folgt:
+   - **Service Name:** `SmartfactoryAI_Shopfloor`
+   - **Service Description:** `Shopfloor Management Panel Backend & Frontend`
+   - **Node Script Path:** `C:\Smartfactoryai\backend\server.js`
 
-3. **Erreichbarkeit prüfen:**
-   Die App ist nun im Firmennetzwerk unter der IP-Adresse des Servers erreichbar:
-   `http://<SERVER-IP>:10000`
+Der Dienst ist danach in der Windows-Diensteverwaltung (`services.msc`) aktiv und startet vollautomatisch beim Booten.
 
-### 💾 Datensicherheit & Backup
-Docker erstellt beim ersten Start automatisch einen Unterordner namens ./shopfloor_data/, in welchem das Backend die Datei shopfloor_storage.json anlegt. 
-- Hierin liegt die gesamte Datenbanklogik (Maschinenstati, Notizen und Konfigurationen).
-- Diese Datei überlebt jeden Container-Neustart und jedes Software-Update.
-- **Backup:** Für die tägliche Datensicherung muss die IT lediglich den Ordner `./shopfloor_data/` sichern.
+---
+
+### [6] DATENSICHERHEIT & BACKUP (FÜR DIE IT)
+Das Backend erstellt beim ersten Start automatisch die Datei `shopfloor_storage.json` im Ordner `.\backend\shopfloor_data`.
+
+- **Backup-Strategie:** Für die tägliche Datensicherung muss die IT lediglich folgenden Ordner in die Backup-Routine (z.B. Veeam) aufnehmen:
+  👉 **PFAD:** `C:\Smartfactoryai\backend\shopfloor_data`
