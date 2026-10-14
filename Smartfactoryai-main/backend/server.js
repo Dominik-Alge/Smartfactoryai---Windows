@@ -374,27 +374,33 @@ app.post('/api/ticket/:id/close', (req, res) => {
 });
 
 // =========================================================================
-// ANPASSUNG 3: Flexibler Fallback für React-Build-Pfad (dist ODER build)
+// STATISCHE DATEIEN (Liefert das React/Vite-Frontend aus)
 // =========================================================================
-const DETECTED_DIST = fs.existsSync(path.resolve(__dirname, '../frontend/dist')) 
-  ? path.resolve(__dirname, '../frontend/dist') 
-  : path.resolve(__dirname, '../frontend/build');
+const frontendDistPath = path.join(__dirname, '..', 'frontend', 'dist');
 
-if (fs.existsSync(DETECTED_DIST)) {
-  app.use(express.static(DETECTED_DIST));
-  app.get('*', (req, res) => {
-    if (req.originalUrl.startsWith('/api')) return res.status(404).json({ error: "API-Endpunkt nicht gefunden" });
-    res.sendFile(path.join(DETECTED_DIST, 'index.html'));
+if (fs.existsSync(frontendDistPath)) {
+  // Wenn der dist-Ordner existiert, liefere die Dateien aus
+  app.use(express.static(frontendDistPath));
+  
+  // Wichtig für React-Router: Alle übrigen Anfragen senden die index.html
+  app.get('*', (req, res, next) => {
+    // Falls eine API-Route aufgerufen wird, die nicht existiert, nicht die HTML senden
+    if (req.path.startsWith('/api')) return next(); 
+    res.sendFile(path.join(frontendDistPath, 'index.html'));
   });
 } else {
-  app.get('/', (req, res) => {
-    res.status(500).send("🚨 Systemfehler: Der statische Frontend-Ordner (dist/build) wurde nicht gefunden. Bitte 'npm run build' ausführen.");
-  });
+  // Sicherheits-Warnung auf der Konsole, falls der Build fehlt
+  console.log(`⚠️ HINWEIS: Statischer Frontend-Ordner nicht gefunden unter: ${frontendDistPath}`);
+  console.log(`Das Backend läuft als reine API. Bitte 'npm run build' im frontend-Ordner ausführen.`);
 }
 
-app.listen(PORT, '0.0.0.0', () => {
+// =========================================================================
+// SERVER START
+// =========================================================================
+app.listen(PORT, () => {
   console.log(`===================================================`);
   console.log(`🚀 FactoryAI Server erfolgreich gestartet auf Port ${PORT}`);
   console.log(`💾 Datenbankordner für IT-Backup: ${STORAGE_DIR}`);
   console.log(`===================================================`);
 });
+
