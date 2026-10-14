@@ -1,5 +1,6 @@
-SMARTFACTORYAI — WINDOWS SERVER DEPLOYMENT
-
+===============================================================================
+               SMARTFACTORYAI — WINDOWS SERVER DEPLOYMENT
+===============================================================================
 
 PROJEKT: Shopfloor Management Panel (Shopfloor-Maske)
 -------------------------------------------------------------------------------
@@ -121,4 +122,3 @@ Das Backend erstellt beim allerersten Start automatisch einen Unterordner namens
   in die Backup-Routine aufnehmen:
   --> PFAD: C:\Smartfactoryai\backend\shopfloor_data\
 ===============================================================================
-
