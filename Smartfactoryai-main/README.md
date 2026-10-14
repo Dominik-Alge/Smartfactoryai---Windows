@@ -1,54 +1,48 @@
-# FactoryAI - Shopfloor Management Panel
+# FactoryAI - Shopfloor Management Panel (Windows Native)
 
 Dieses Projekt ist eine digitale Shopfloor-Maske zur Online-Erfassung von Maschinenstati, Kriterienübersichten (Ampelsystem) und zur Bündelung von Notizen für Gruppentreffen und Schichtübergaben.
 
-## 🚀 Architektur & Struktur (Layer-System)
-Das System ist so aufgebaut, dass Informationen über verschiedene Ebenen gebündelt werden können:
-- **Gruppe** (Top-Level Produktionsübersicht)
-- **Insel** (Zusammenfassung mehrerer Arbeitsplätze)
-- **Maschine / Arbeitsplatz** (Detaillierte Matrixansicht)
-
-## 🛠️ Tech-Stack
-- **Frontend:** React
-- **Backend:** Node.js / Express
-- **Infrastruktur:** Docker & Docker Compose (für On-Premise Betriebs-Server)
-- **Datenbank:** JSON-File Persistence (`shopfloor_storage.json`)
-
-## 📁 Projektstruktur
-- `backend/server.js` - Der Node.js Express Server (API-Endpunkte für Stati und Notizen)
-- `backend/package.json` - Verwaltung der Node.js Abhängigkeiten
-- `frontend/` - Quellcode des React-Frontends
-- `Dockerfile` - Multi-Stage Konfiguration zum Bauen von Frontend & Backend
-- `docker-compose.yml` - Orchestrierung für den Start auf dem lokalen Server
+## Architektur
+Die Anwendung wurde vollständig von Docker auf eine **native Windows-Architektur** umgestellt. 
+* **Backend:** Node.js (Express) läuft auf Port `5000`
+* **Frontend:** React (Vite) ist im Backend integriert und wird direkt über das Backend ausgeliefert.
+* **Datenbank:** Dateibasierte Speicherung in `shopfloor_storage.json` im Backend-Verzeichnis.
 
 ---
 
-## 💻 Installation auf dem Firmenserver (On-Premise)
+## Bereitstellung auf dem Windows-Server (Leitfaden für die IT)
 
-### Voraussetzungen
-Auf dem Zielserver muss **Docker** und **Docker Compose** installiert sein.
+### 1. Voraussetzungen
+* **Node.js** (LTS-Version) muss auf dem Windows-Server installiert sein.
+* Ein Tool wie **NSSM** (Non-Sucking Service Manager) wird empfohlen, um die App als Windows-Dienst einzurichten.
 
-### Schritt-für-Schritt-Installation
-
-1. **Paket entpacken:**
-   Kopiere die ZIP-Datei auf den Server und entpacke sie in ein beliebiges Verzeichnis (z. B. `/opt/factoryai`).
-   ```bash
-   cd /opt/factoryai
+### 2. Installation & Start
+1. Kopiere das gesamte Repository in ein Verzeichnis auf dem Server (z. B. `C:\Apps\SmartFactory\`).
+2. Öffne die Windows-Eingabeaufforderung (**CMD**) als Administrator.
+3. Navigiere in den Backend-Ordner:
+   ```cmd
+   cd C:\Apps\SmartFactory\backend
+   ```
+4. Installiere die Produktions-Abhängigkeiten:
+   ```cmd
+   npm install --production
+   ```
+5. Starte die Anwendung testweise:
+   ```cmd
+   node server.js
    ```
 
-2. **Anwendung bauen und starten:**
-   Führe den folgenden Befehl im Terminal aus, um das System lokal auf dem Server zu bauen und im Hintergrund zu starten:
-   ```bash
-   docker compose up -d --build
-   ```
+### 3. Als Windows-Dienst im Hintergrund einrichten
+Damit die Anwendung permanent im Hintergrund läuft und nach Server-Neustarts automatisch hochfährt:
+1. Öffne CMD als Administrator und führe aus: `nssm install SmartFactory`
+2. Konfiguriere das GUI-Fenster wie folgt:
+   * **Path:** `C:\Program Files\nodejs\node.exe` (bzw. dein lokaler Node-Pfad)
+   * **Startup directory:** `C:\Apps\SmartFactory\backend`
+   * **Arguments:** `server.js`
+3. Klicke auf **Install service** und starte den Dienst in der Windows-Diensteverwaltung (`services.msc`).
 
-3. **Erreichbarkeit prüfen:**
-   Die App ist nun im Firmennetzwerk unter der IP-Adresse des Servers erreichbar:
-   `http://<SERVER-IP>:10000`
+---
 
-### 💾 Datensicherheit & Backup
-Docker erstellt beim ersten Start automatisch eine Datei namens `shopfloor_storage.json` im Unterordner `./shopfloor_data/`. 
-- Hierin liegt die gesamte Datenbanklogik (Maschinenstati, Notizen und Konfigurationen).
-- Diese Datei überlebt jeden Container-Neustart und jedes Software-Update.
-- **Backup:** Für die tägliche Datensicherung muss die IT lediglich den Ordner `./shopfloor_data/` sichern.
-
+## Aufruf im Firmennetzwerk
+Die Anwendung ist für alle Mitarbeiter im selben Netzwerk direkt über die IP-Adresse des Servers erreichbar:
+`http://<SERVER-IP-ADRESSE>:5000`
