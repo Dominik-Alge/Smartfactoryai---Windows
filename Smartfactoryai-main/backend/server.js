@@ -113,7 +113,7 @@ const criterionContacts = {
 };
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || '://bruderer.com', 
+  host: process.env.SMTP_HOST || 'mail.bruderer.com', 
   port: parseInt(process.env.SMTP_PORT || '587'),
   secure: process.env.SMTP_SECURE === 'true',
   auth: {
