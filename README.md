@@ -136,28 +136,14 @@ Der TCP-Port 5000 muss für eingehende Verbindungen freigegeben sein.
 6. BETRIEB ALS WINDOWS-DIENST
 ═══════════════════════════════════════════════════
 
-Für den automatischen Start nach einem Serverneustart kann die Anwendung als Windows-Dienst eingerichtet werden.
+Für einen produktiven Betrieb kann die Anwendung als Windows-Dienst eingerichtet werden, sodass sie nach einem Serverneustart automatisch gestartet wird.
 
-Installation des Dienst-Tools:
+Die konkrete Umsetzung (Windows-Dienst, Task Scheduler oder alternative Betriebsform) erfolgt in Abstimmung mit der IT und entsprechend den geltenden Betriebsstandards.
 
-npm install -g qckwinsvc
+Produktiver Startbefehl:
 
-Dienst erstellen:
-
-qckwinsvc
-
-Konfiguration:
-
-Service Name:
-SmartfactoryAI_Shopfloor
-
-Service Description:
-Shopfloor Management Panel
-
-Node Script Path:
-C:\Smartfactoryai\backend\server.js
-
-Nach der Einrichtung startet die Anwendung automatisch mit dem Server.
+cd C:\Smartfactoryai\backend
+node server.js
 
 ═══════════════════════════════════════════════════
 7. DATENSICHERUNG
