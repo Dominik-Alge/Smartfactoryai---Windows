@@ -40,7 +40,8 @@ Betriebsmodell:
 - Kein Docker erforderlich
 
 Hinweis:
-Das React-Frontend wird einmalig erstellt (Build) und anschliessend direkt durch den Express-Server bereitgestellt. Im Produktivbetrieb läuft nur noch das Backend.
+Das React-Frontend wird einmalig mittels Vite kompiliert (Build) und anschliessend direkt durch den Express-Server bereitgestellt. 
+Im Produktivbetrieb wird ausschliesslich der Node.js-Server ausgeführt.
 
 ═══════════════════════════════════════════════════
 3. PROJEKTSTRUKTUR
@@ -63,19 +64,14 @@ Smartfactoryai
     ├── package.json
     └── vite.config.js
 
-Beschreibung:
-
-starten.bat
-→ Startet die Anwendung unter Windows
-
-backend/server.js
-→ Node.js-Server für API und Frontend-Auslieferung
-
-backend/shopfloor_data
-→ Persistente Datenspeicherung und Backup-Ordner
-
-frontend/dist
-→ Kompilierte Produktionsversion des Frontends
+Beschreibung: 
+starten.bat → Startet die Anwendung unter Windows 
+backend/server.js → Node.js-Server für API und Frontend-Auslieferung 
+backend/package.json → Backend-Abhängigkeiten 
+frontend/package.json → Frontend-Abhängigkeiten 
+backend/shopfloor_data → Persistente Datenspeicherung und Backup-Ordner 
+backend/shopfloor_data/shopfloor_storage.json → Persistente Anwendungsdaten 
+frontend/dist → Kompilierte Produktionsversion des Frontends
 
 ═══════════════════════════════════════════════════
 4. INSTALLATION AUF DEM WINDOWS SERVER
@@ -85,41 +81,46 @@ Voraussetzungen:
 
 - Windows Server
 - Node.js LTS Version
-- Administratorrechte
 
 Schritt 1: Projekt bereitstellen
 
-Projekt nach folgendem Pfad kopieren:
+Die Anwendung kann in einem beliebigen Verzeichnis auf dem Zielsystem abgelegt werden.
 
-C:\Smartfactoryai
+Beispiel:
+
+<Installationsverzeichnis>\Smartfactoryai
 
 Schritt 2: Backend-Abhängigkeiten installieren
 
-cd C:\Smartfactoryai\backend
+cd <Installationsverzeichnis>\Smartfactoryai\backend
+
 npm install
 
 Schritt 3: Frontend-Abhängigkeiten installieren und Build erstellen
 
-cd C:\Smartfactoryai\frontend
+cd <Installationsverzeichnis>\Smartfactoryai\frontend
+
 npm install
+
 npm run build
 
 Hinweis:
+
 Der Build erzeugt den Ordner:
 
 frontend\dist
 
-Dieser wird später vom Backend automatisch ausgeliefert.
+Dieser wird anschliessend automatisch durch das Backend ausgeliefert.
 
 Schritt 4: Anwendung starten
 
-cd C:\Smartfactoryai\backend
+cd <Installationsverzeichnis>\Smartfactoryai\backend
+
 node server.js
 
 Alternativ:
 
 Doppelklick auf starten.bat
-
 ═══════════════════════════════════════════════════
 5. ZUGRIFF AUF DIE ANWENDUNG
 ═══════════════════════════════════════════════════
@@ -142,7 +143,7 @@ Die konkrete Umsetzung (Windows-Dienst, Task Scheduler oder alternative Betriebs
 
 Produktiver Startbefehl:
 
-cd C:\Smartfactoryai\backend
+cd <Installationsverzeichnis>\Smartfactoryai\backend
 node server.js
 
 ═══════════════════════════════════════════════════
@@ -151,7 +152,7 @@ node server.js
 
 Alle Betriebsdaten werden in folgendem Verzeichnis gespeichert:
 
-C:\Smartfactoryai\backend\shopfloor_data
+<Installationsverzeichnis>\Smartfactoryai\backend\shopfloor_data
 
 Datei:
 
@@ -161,7 +162,7 @@ Empfehlung:
 
 Das Verzeichnis
 
-C:\Smartfactoryai\backend\shopfloor_data
+<Installationsverzeichnis>\Smartfactoryai\backend\shopfloor_data
 
 soll in die bestehende Backup-Lösung (z.B. Veeam) aufgenommen werden.
 
@@ -171,13 +172,19 @@ soll in die bestehende Backup-Lösung (z.B. Veeam) aufgenommen werden.
 
 Frontend-Änderungen:
 
-cd C:\Smartfactoryai\frontend
+cd <Installationsverzeichnis>\Smartfactoryai\frontend
+
 npm run build
 
 Backend-Neustart:
 
-cd C:\Smartfactoryai\backend
+cd <Installationsverzeichnis>\Smartfactoryai\backend
+
 node server.js
+
+Hinweis:
+
+Die aktuelle Datenhaltung basiert bewusst auf einer JSON-Datei und wurde für die Pilotphase möglichst einfach gehalten.
 
 Im Normalbetrieb sind keine manuellen Eingriffe an der Datenstruktur erforderlich.
 
@@ -185,4 +192,20 @@ Im Normalbetrieb sind keine manuellen Eingriffe an der Datenstruktur erforderlic
 STATUS
 ═══════════════════════════════════════════════════
 
-Die Anwendung wurde erfolgreich auf einem Windows-System ohne Docker getestet und validiert.
+Die Anwendung wurde erfolgreich in einer Windows-Umgebung installiert, gebaut und betrieben.
+
+Folgende Funktionen konnten erfolgreich getestet werden:
+
+- Frontend-Build mittels Vite
+- Start des Node.js / Express Servers
+- Auslieferung des Frontends über Express
+- Persistente Datenspeicherung über shopfloor_storage.json
+- Lokaler Zugriff über HTTP (Port 5000)
+- Betrieb ohne Docker-Container
+
+Aktuelle technische Kennzahlen der Testumgebung:
+
+- Installationsgrösse der Anwendung: ca. 63 MB
+- Frontend-Build (dist): ca. 177 KB
+- Arbeitsspeicherbedarf des Node.js-Prozesses: ca. 15 MB
+- Aktuelle Datendatei: ca. 2 KB
