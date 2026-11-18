@@ -146,20 +146,88 @@ const sendStatusAlert = async (machineId, criterion, note, author) => {
   }
 };
 
+// Hilfsfunktion: Speichert nachvollziehbar, wer was gelöscht hat
+function logAudit(data, action, targetType, targetName, panelName, author) {
+  if (!data._auditLog) data._auditLog = [];
+  data._auditLog.push({
+    timestamp: new Date().toLocaleString('de-CH', { timeZone: 'Europe/Zurich' }),
+    timestampMs: Date.now(),
+    action,
+    targetType,
+    targetName,
+    panelName,
+    author: author || 'Unbekannt'
+  });
+}
+
 // --- BASE SHOPFLOOR API ---
 app.get('/api/panels', (req, res) => {
   const data = loadData();
-  const list = getPanelKeys(data).map(key => ({ id: key, name: data[key].name }));
-  list.unshift({ id: 'insel_ds', name: '👁️ Insel-Sicht DS (Vorgesetzte)' });
+  // Filtert auch _auditLog heraus, damit es nicht als Tab erscheint
+  const keys = Object.keys(data).filter(
+    key => key !== '_system' && key !== '_actions' && key !== '_auditLog'
+  );
+  const list = keys.map(key => ({ id: key, name: data[key].name }));
+  list.unshift({ id: 'insel_ds', name: ' Insel-Sicht DS (Vorgesetzte)' });
   res.json(list);
+});
+
+// NEU: Gruppen-Tabs (Panels) verschieben
+app.post('/api/panels/move', (req, res) => {
+  const { panelId, direction } = req.body; // direction: 'left' oder 'right'
+  const data = loadData();
+  const keys = Object.keys(data).filter(
+    key => key !== '_system' && key !== '_actions' && key !== '_auditLog'
+  );
+
+  const index = keys.indexOf(panelId);
+  if (index === -1) return res.status(404).json({ error: 'Panel nicht gefunden' });
+
+  const targetIndex = direction === 'left' ? index - 1 : index + 1;
+  if (targetIndex < 0 || targetIndex >= keys.length) {
+    return res.json({ success: true }); // Bereits am Rand
+  }
+
+  // Reihenfolge der Keys tauschen
+  [keys[index], keys[targetIndex]] = [keys[targetIndex], keys[index]];
+
+  // Neues Daten-Objekt in neuer Reihenfolge aufbauen
+  const reorderedData = {};
+  keys.forEach(k => { reorderedData[k] = data[k]; });
+  if (data._system) reorderedData._system = data._system;
+  if (data._actions) reorderedData._actions = data._actions;
+  if (data._auditLog) reorderedData._auditLog = data._auditLog;
+
+  saveData(reorderedData);
+  res.json({ success: true });
+});
+
+// NEU: Gruppe (Panel) endgültig löschen + Audit-Log
+app.delete('/api/panel/:id', (req, res) => {
+  const { id } = req.params;
+  const { author } = req.body;
+  const data = loadData();
+
+  if (!data[id] || id.startsWith('_')) {
+    return res.status(404).json({ error: 'Panel nicht gefunden' });
+  }
+
+  const panelName = data[id].name || id;
+  logAudit(data, 'DELETE_PANEL', 'Gruppe', panelName, panelName, author);
+
+  delete data[id];
+  saveData(data);
+  res.json({ success: true });
 });
 
 app.get('/api/panel/:id', (req, res) => {
   const data = loadData();
-
   if (req.params.id === 'insel_ds') {
     const aggregatedCells = {};
-    getPanelKeys(data).forEach((panelKey) => {
+    const keys = Object.keys(data).filter(
+      key => key !== '_system' && key !== '_actions' && key !== '_auditLog'
+    );
+    keys.forEach((panelKey) => {
       const panel = data[panelKey];
       if (panel && panel.cells) {
         Object.keys(panel.cells).forEach((cellKey) => {
@@ -169,7 +237,6 @@ app.get('/api/panel/:id', (req, res) => {
         });
       }
     });
-
     return res.json({
       name: 'Insel-Sicht DS',
       machines: [],
@@ -183,6 +250,95 @@ app.get('/api/panel/:id', (req, res) => {
   if (!panel) return res.status(404).json({ error: "Panel nicht gefunden" });
   if (!panel.historyLog) panel.historyLog = [];
   res.json(panel);
+});
+
+app.post('/api/panel', (req, res) => {
+  const { id, name } = req.body;
+  if (!id || !name) return res.status(400).json({ error: "id und name erforderlich" });
+
+  const data = loadData();
+  if (data[id]) return res.status(400).json({ error: "ID existiert bereits" });
+
+  data[id] = { name, machines: [], criteria: [], cells: {}, historyLog: [] };
+  saveData(data);
+  res.json({ success: true, panels: data });
+});
+
+// ERWEITERT: Struktur ändern (Hinzufügen, Verschieben, Löschen mit Audit-Log)
+app.post('/api/panel/:id/structure', (req, res) => {
+  const data = loadData();
+  const panel = data[req.params.id];
+  if (!panel) return res.status(404).json({ error: "Panel nicht gefunden" });
+
+  const { action, type, value, direction, author } = req.body;
+  const timeString = new Date().toLocaleTimeString('de-CH', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Europe/Zurich'
+  });
+
+  if (type === 'machine') {
+    if (action === 'add' && !panel.machines.includes(value)) {
+      panel.machines.push(value);
+    }
+    if (action === 'move') {
+      const idx = panel.machines.indexOf(value);
+      const targetIdx = direction === 'left' ? idx - 1 : idx + 1;
+      if (idx !== -1 && targetIdx >= 0 && targetIdx < panel.machines.length) {
+        [panel.machines[idx], panel.machines[targetIdx]] = [panel.machines[targetIdx], panel.machines[idx]];
+      }
+    }
+    if (action === 'delete') {
+      panel.criteria.forEach(crit => {
+        if (panel.cells[`${value}-${crit}`]?.status === 'red') {
+          panel.historyLog.push({
+            type: 'Maschine',
+            name: value,
+            time: timeString,
+            timestampMs: Date.now(),
+            note: `Mit ungelöstem Problem im Kriterium "${crit}" entfernt (durch ${author || 'Unbekannt'})`
+          });
+        }
+      });
+      logAudit(data, 'DELETE_MACHINE', 'Maschine', value, panel.name, author);
+      panel.machines = panel.machines.filter(m => m !== value);
+      Object.keys(panel.cells).forEach(k => {
+        if (k.startsWith(`${value}-`)) delete panel.cells[k];
+      });
+    }
+  } else if (type === 'criterion') {
+    if (action === 'add' && !panel.criteria.includes(value)) {
+      panel.criteria.push(value);
+    }
+    if (action === 'move') {
+      const idx = panel.criteria.indexOf(value);
+      const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (idx !== -1 && targetIdx >= 0 && targetIdx < panel.criteria.length) {
+        [panel.criteria[idx], panel.criteria[targetIdx]] = [panel.criteria[targetIdx], panel.criteria[idx]];
+      }
+    }
+    if (action === 'delete') {
+      panel.machines.forEach(m => {
+        if (panel.cells[`${m}-${value}`]?.status === 'red') {
+          panel.historyLog.push({
+            type: 'Kategorie',
+            name: value,
+            time: timeString,
+            timestampMs: Date.now(),
+            note: `Mit ungelöstem Problem auf Maschine "${m}" entfernt (durch ${author || 'Unbekannt'})`
+          });
+        }
+      });
+      logAudit(data, 'DELETE_CRITERION', 'Kategorie', value, panel.name, author);
+      panel.criteria = panel.criteria.filter(c => c !== value);
+      Object.keys(panel.cells).forEach(k => {
+        if (k.endsWith(`-${value}`)) delete panel.cells[k];
+      });
+    }
+  }
+
+  saveData(data);
+  res.json({ success: true, panel });
 });
 
 app.post('/api/panel', (req, res) => {
