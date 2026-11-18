@@ -235,19 +235,6 @@ export default function App() {
     setDeleteModal({ isOpen: true, targetType: 'panel', targetId: panel.id, targetName: panel.name || panel.id });
   };
 
-    // Öffnet das Sicherheits-Popup für Maschine, Kriterium oder Gruppe
-  const handleDeleteMachine = (machineId) => {
-    setDeleteModal({ isOpen: true, targetType: 'machine', targetId: machineId, targetName: `Maschine ${machineId}` });
-  };
-
-  const handleDeleteCriterion = (crit) => {
-    setDeleteModal({ isOpen: true, targetType: 'criterion', targetId: crit, targetName: crit });
-  };
-
-  const handleDeletePanel = (panel) => {
-    setDeleteModal({ isOpen: true, targetType: 'panel', targetId: panel.id, targetName: panel.name || panel.id });
-  };
-
   // Führt das endgültige Löschen erst aus, nachdem "Löschen" + Kürzel eingegeben wurden
   const executeConfirmedDelete = async (author) => {
     const { targetType, targetId } = deleteModal;
