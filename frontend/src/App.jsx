@@ -506,6 +506,21 @@ export default function App() {
         />
       )}
 
+            <DeleteConfirmModal
+        isOpen={deleteModal.isOpen}
+        targetType={
+          deleteModal.targetType === 'panel'
+            ? 'Gruppe'
+            : deleteModal.targetType === 'machine'
+            ? 'Maschine'
+            : 'Kategorie'
+        }
+        targetName={deleteModal.targetName}
+        onClose={() => setDeleteModal({ isOpen: false, targetType: '', targetId: '', targetName: '' })}
+        onConfirm={executeConfirmedDelete}
+      />
+
+
     </div>
   );
 }
