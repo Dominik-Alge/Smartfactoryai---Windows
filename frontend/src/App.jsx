@@ -383,23 +383,63 @@ export default function App() {
         
       </div>
         
-      {/* DYNAMISCHE EXCEL-REGISTERKARTEN (Mappen-Auswahl) */}
+            {/* DYNAMISCHE EXCEL-REGISTERKARTEN (Mappen-Auswahl) */}
       <div className="flex flex-wrap items-center gap-2 mb-4 border-b border-gray-200 pb-2">
-        {panels.map((p) => (
-          <button
-            key={p.id}
-            onClick={() => setActivePanelId(p.id)}
-            className={`px-4 py-2 text-sm font-bold rounded-t-lg transition border-t border-x -mb-[9px] ${
-              activePanelId === p.id
-                ? 'bg-white text-blue-600 border-gray-200 shadow-sm z-10'
-                : 'bg-gray-100 text-gray-500 border-transparent hover:bg-gray-200'
-            }`}
-          >
-            {p.name || p.id}
-          </button>
-        ))}
-    
-        <button 
+        {panels.map((p, idx) => {
+          const isSystemTab = p.id === 'insel_ds';
+          const canMoveLeft = !isSystemTab && idx > 1;
+          const canMoveRight = !isSystemTab && idx < panels.length - 1;
+
+          return (
+            <div
+              key={p.id}
+              className={`flex items-center gap-1.5 px-3 py-2 text-sm font-bold rounded-t-lg transition border-t border-x -mb-[9px] ${
+                activePanelId === p.id
+                  ? 'bg-white text-blue-600 border-gray-200 shadow-sm z-10'
+                  : 'bg-gray-100 text-gray-500 border-transparent hover:bg-gray-200'
+              }`}
+            >
+              {canMoveLeft && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); handleMovePanel(p.id, 'left'); }}
+                  className="text-xs px-1 py-0.5 rounded bg-slate-200/70 hover:bg-slate-300 text-slate-700"
+                  title="Gruppe nach links verschieben"
+                >
+                  ←
+                </button>
+              )}
+
+              <button type="button" onClick={() => setActivePanelId(p.id)} className="px-1">
+                {p.name || p.id}
+              </button>
+
+              {canMoveRight && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); handleMovePanel(p.id, 'right'); }}
+                  className="text-xs px-1 py-0.5 rounded bg-slate-200/70 hover:bg-slate-300 text-slate-700"
+                  title="Gruppe nach rechts verschieben"
+                >
+                  →
+                </button>
+              )}
+
+              {!isSystemTab && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); handleDeletePanel(p); }}
+                  className="ml-1 w-4 h-4 rounded-full bg-red-100 text-red-600 hover:bg-red-600 hover:text-white text-[10px] flex items-center justify-center transition"
+                  title="Gruppe endgültig löschen"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          );
+        })}
+
+        <button
           onClick={handleCreateNewPanel}
           className="px-3 py-1.5 text-xs font-bold bg-gray-200 text-gray-700 hover:bg-slate-700 hover:text-white rounded-lg transition ml-2 shadow-sm relative -top-[4px]"
         >
