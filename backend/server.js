@@ -272,11 +272,11 @@ app.post('/api/panel/:id/status', async (req, res) => {
 
     // 🎯 DATEN-INJEKTION: Hier verankern wir alle Daten aus Ebene 1 bombenfest im JSON
     actionTicket.id = generateActionId(data);
+    actionTicket.panelId = String(req.params.id);
     actionTicket.machineId = String(machineId);   // Speichert z.B. "13503"
     actionTicket.criterion = String(criterion);   // Speichert z.B. "DISPO" oder "Qualität"
     
     data._actions[actionTicket.id] = actionTicket;
-
     sendStatusAlert(machineId, criterion, note, author);
   }
 
