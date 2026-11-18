@@ -4,8 +4,7 @@ import Modal from './components/Modal';
 import SupervisorView from './components/SupervisorView';
 import CockpitView from './components/CockpitView'; // Ergänzt am 18.11.2026
 import ActionEngine from './ActionEngine';
-
-
+import DeleteConfirmModal from './components/DeleteConfirmModal'; // Ergänzt am 18.11.2026
 
 // Ersetze das alte Skript hiermit (Nutzt das offizielle Play CDN):
 if (!document.getElementById('tailwind-cdn')) {
@@ -91,6 +90,12 @@ export default function App() {
   const [panelData, setPanelData] = useState({ name: '', machines: [], criteria: [], cells: {} });
   
   const [modalConfig, setModalConfig] = useState({ isOpen: false, machineId: '', criterion: '' });
+    const [deleteModal, setDeleteModal] = useState({
+    isOpen: false,
+    targetType: '', // 'panel' | 'machine' | 'criterion'
+    targetId: '',
+    targetName: ''
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showMemory, setShowMemory] = useState(false);
@@ -175,56 +180,87 @@ export default function App() {
     }
   };
 
-  // 5. Maschine permanent aus Backend löschen
-  const handleDeleteMachine = async (machineId) => {
-    if (!window.confirm(`Spalte "${machineId}" wirklich permanent aus der Datenbank löschen?`)) return;
+    // Maschine verschieben (Links / Rechts)
+  const handleMoveMachine = async (machineId, direction) => {
     try {
       const response = await fetch(`${API_URL}/api/panel/${activePanelId}/structure`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'delete', type: 'machine', value: machineId })
+        body: JSON.stringify({ action: 'move', type: 'machine', value: machineId, direction })
       });
       if (response.ok) fetchActivePanelData();
     } catch (err) {
-      console.error("Fehler beim Löschen:", err);
+      console.error("Fehler beim Verschieben der Maschine:", err);
     }
   };
 
-  // 6. Kriterium permanent aus Backend löschen
-  const handleDeleteCriterion = async (crit) => {
-    if (!window.confirm(`Kriterium "${crit}" wirklich permanent aus der Datenbank löschen?`)) return;
+  // Kriterium verschieben (Hoch / Runter)
+  const handleMoveCriterion = async (crit, direction) => {
     try {
       const response = await fetch(`${API_URL}/api/panel/${activePanelId}/structure`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'delete', type: 'criterion', value: crit })
+        body: JSON.stringify({ action: 'move', type: 'criterion', value: crit, direction })
       });
       if (response.ok) fetchActivePanelData();
     } catch (err) {
-      console.error("Fehler beim Löschen:", err);
+      console.error("Fehler beim Verschieben des Kriteriums:", err);
     }
   };
 
-  const handleCellClick = (machineId, criterion) => {
-    setModalConfig({ isOpen: true, machineId, criterion });
-  };
-
-  // 7. Ampel-Status ändern und Notiz speichern
-  const handleSaveStatus = async (machineId, criterion, status, note, author) => {
+  // Gruppe / Mappe verschieben (Links / Rechts)
+  const handleMovePanel = async (panelId, direction) => {
     try {
-      const response = await fetch(`${API_URL}/api/panel/${activePanelId}/status`, {
+      const response = await fetch(`${API_URL}/api/panels/move`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ machineId, criterion, status, note, author })
+        body: JSON.stringify({ panelId, direction })
       });
-      
-      if (!response.ok) throw new Error('Speichern fehlgeschlagen');
-      
-      fetchActivePanelData(); // UI sofort neu laden
-      setModalConfig({ isOpen: false, machineId: '', criterion: '' }); // Modal schließen
+      if (response.ok) fetchPanels();
     } catch (err) {
-      alert("Fehler beim Speichern des Status!");
-      console.error(err);
+      console.error("Fehler beim Verschieben der Gruppe:", err);
+    }
+  };
+
+  // Öffnet das Sicherheits-Popup für Maschine, Kriterium oder Gruppe
+  const handleDeleteMachine = (machineId) => {
+    setDeleteModal({ isOpen: true, targetType: 'machine', targetId: machineId, targetName: `Maschine ${machineId}` });
+  };
+
+  const handleDeleteCriterion = (crit) => {
+    setDeleteModal({ isOpen: true, targetType: 'criterion', targetId: crit, targetName: crit });
+  };
+
+  const handleDeletePanel = (panel) => {
+    setDeleteModal({ isOpen: true, targetType: 'panel', targetId: panel.id, targetName: panel.name || panel.id });
+  };
+
+  // Führt das endgültige Löschen erst aus, nachdem "Löschen" + Kürzel eingegeben wurden
+  const executeConfirmedDelete = async (author) => {
+    const { targetType, targetId } = deleteModal;
+    try {
+      if (targetType === 'panel') {
+        const response = await fetch(`${API_URL}/api/panel/${targetId}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ author })
+        });
+        if (response.ok) {
+          await fetchPanels();
+          if (activePanelId === targetId) setActivePanelId('insel_ds');
+        }
+      } else {
+        const response = await fetch(`${API_URL}/api/panel/${activePanelId}/structure`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete', type: targetType, value: targetId, author })
+        });
+        if (response.ok) fetchActivePanelData();
+      }
+    } catch (err) {
+      console.error("Fehler beim endgültigen Löschen:", err);
+    } finally {
+      setDeleteModal({ isOpen: false, targetType: '', targetId: '', targetName: '' });
     }
   };
 
