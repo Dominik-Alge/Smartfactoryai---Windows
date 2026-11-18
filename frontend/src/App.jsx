@@ -235,6 +235,19 @@ export default function App() {
     setDeleteModal({ isOpen: true, targetType: 'panel', targetId: panel.id, targetName: panel.name || panel.id });
   };
 
+    // Öffnet das Sicherheits-Popup für Maschine, Kriterium oder Gruppe
+  const handleDeleteMachine = (machineId) => {
+    setDeleteModal({ isOpen: true, targetType: 'machine', targetId: machineId, targetName: `Maschine ${machineId}` });
+  };
+
+  const handleDeleteCriterion = (crit) => {
+    setDeleteModal({ isOpen: true, targetType: 'criterion', targetId: crit, targetName: crit });
+  };
+
+  const handleDeletePanel = (panel) => {
+    setDeleteModal({ isOpen: true, targetType: 'panel', targetId: panel.id, targetName: panel.name || panel.id });
+  };
+
   // Führt das endgültige Löschen erst aus, nachdem "Löschen" + Kürzel eingegeben wurden
   const executeConfirmedDelete = async (author) => {
     const { targetType, targetId } = deleteModal;
@@ -264,8 +277,26 @@ export default function App() {
     }
   };
 
-      } finally {
-      setDeleteModal({ isOpen: false, targetType: '', targetId: '', targetName: '' });
+  const handleCellClick = (machineId, criterion) => {
+    setModalConfig({ isOpen: true, machineId, criterion });
+  };
+
+  // 7. Ampel-Status ändern und Notiz speichern
+  const handleSaveStatus = async (machineId, criterion, status, note, author) => {
+    try {
+      const response = await fetch(`${API_URL}/api/panel/${activePanelId}/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ machineId, criterion, status, note, author })
+      });
+
+      if (!response.ok) throw new Error('Speichern fehlgeschlagen');
+
+      fetchActivePanelData(); // UI sofort neu laden
+      setModalConfig({ isOpen: false, machineId: '', criterion: '' }); // Modal schließen
+    } catch (err) {
+      alert("Fehler beim Speichern des Status!");
+      console.error(err);
     }
   };
 
