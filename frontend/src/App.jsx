@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import Matrix from './components/Matrix';
 import Modal from './components/Modal';
 import SupervisorView from './components/SupervisorView';
+import CockpitView from './components/CockpitView'; // Ergänzt am 18.11.2026
 import ActionEngine from './ActionEngine';
+
 
 
 // Ersetze das alte Skript hiermit (Nutzt das offizielle Play CDN):
@@ -265,6 +267,42 @@ export default function App() {
       </div>
     );
   }
+    if (currentView === 'cockpit') {
+    return (
+      <>
+        <CockpitView
+          apiUrl={API_URL}
+          panels={panels}
+          onCellClick={(machineId, criterion, panelId) => {
+            if (panelId && panelId !== activePanelId) setActivePanelId(panelId);
+            handleCellClick(machineId, criterion);
+          }}
+          onAddMachine={handleAddMachine}
+          onAddCriterion={handleAddCriterion}
+          onDeleteMachine={handleDeleteMachine}
+          onDeleteCriterion={handleDeleteCriterion}
+          onCloseView={() => setCurrentView('shopfloor')}
+        />
+        {modalConfig.isOpen && (
+          <Modal
+            isOpen={modalConfig.isOpen}
+            machineId={modalConfig.machineId}
+            criterion={modalConfig.criterion}
+            allCriteria={Object.keys(reasonOptions)}
+            reasons={reasonOptions}
+            currentData={
+              panelData.cells[`${modalConfig.machineId}-${modalConfig.criterion}`] || {
+                status: 'green',
+                notes: []
+              }
+            }
+            onClose={() => setModalConfig({ isOpen: false, machineId: '', criterion: '' })}
+            onSave={handleSaveStatus}
+          />
+        )}
+      </>
+    );
+  }
 
   return (
     <div className="bg-slate-50 min-h-screen p-4 md:p-8 font-sans">
@@ -288,14 +326,22 @@ export default function App() {
           </span>
         )}
 
-        {/* Action Engine Button reaktiviert! */}
+        {/* Cockpit & Action Engine Buttons */}
         {!error && (
-          <button 
-            onClick={() => setCurrentView('action-engine')}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition-colors flex items-center gap-1"
-          >
-            🧠 Action Engine (Ebene 2)
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentView('cockpit')}
+              className="bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-extrabold px-3 py-1.5 rounded-lg shadow transition-colors flex items-center gap-1"
+            >
+              📺 Shopfloor Cockpit (TV)
+            </button>
+            <button 
+              onClick={() => setCurrentView('action-engine')}
+              className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition-colors flex items-center gap-1"
+            >
+              🧠 Action Engine (Ebene 2)
+            </button>
+          </div>
         )}
         
       </div>
