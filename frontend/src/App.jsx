@@ -264,6 +264,11 @@ export default function App() {
     }
   };
 
+      } finally {
+      setDeleteModal({ isOpen: false, targetType: '', targetId: '', targetName: '' });
+    }
+  };
+
   // Funktion zum Erstellen einer komplett neuen Mappe (Excel-Mappe)
   const handleCreateNewPanel = async () => {
     const name = prompt("Name der neuen Produktionsgruppe (z.B. Gruppe Fräsen):");
