@@ -1,26 +1,40 @@
 import React, { useState } from 'react';
 
-export default function ShopfloorMatrix({ 
-  data = {}, 
-  machines = [], 
-  criteria = [], 
-  currentPanelName = '', 
-  historyLog = [], // Empfängt das Verlaufsprotokoll aus dem Backend
-  onCellClick, 
-  onAddMachine, 
-  onAddCriterion, 
-  onDeleteMachine, 
-  onDeleteCriterion 
+export default function ShopfloorMatrix({
+  data = {},
+  machines = [],
+  criteria = [],
+  currentPanelName = '',
+  historyLog = [],
+  onCellClick,
+  onAddMachine,
+  onAddCriterion,
+  onDeleteMachine,
+  onDeleteCriterion,
+  onMoveMachine,
+  onMoveCriterion
 }) {
   const [newMachine, setNewMachine] = useState('');
   const [newCriterion, setNewCriterion] = useState('');
-  
-  // Schaltet die Anzeige der kleinen Zeitstempel an den Ampeln um
   const [showHistory, setShowHistory] = useState(false);
+
+  const arrowBtnStyle = {
+    fontSize: '11px',
+    color: '#475569',
+    backgroundColor: '#f1f5f9',
+    border: '1px solid #cbd5e1',
+    width: '20px',
+    height: '20px',
+    borderRadius: '4px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    padding: 0
+  };
 
   return (
     <div style={{ fontFamily: '"Inter", "Segoe UI", sans-serif', color: '#0f172a', padding: '0 2px' }}>
-      
       {/* Konfigurations-Leiste */}
       <div style={{
         backgroundColor: '#ffffff',
@@ -36,7 +50,7 @@ export default function ShopfloorMatrix({
       }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
           {/* Formular für neue Maschinen (Spalten) */}
-          <form onSubmit={(e) => { e.preventDefault(); if(newMachine.trim()) { onAddMachine(newMachine.trim()); setNewMachine(''); } }} style={{ display: 'flex', gap: '8px' }}>
+          <form onSubmit={(e) => { e.preventDefault(); if (newMachine.trim()) { onAddMachine(newMachine.trim()); setNewMachine(''); } }} style={{ display: 'flex', gap: '8px' }}>
             <input
               type="text"
               value={newMachine}
@@ -50,7 +64,7 @@ export default function ShopfloorMatrix({
           </form>
 
           {/* Formular für neue Kategorien (Zeilen) */}
-          <form onSubmit={(e) => { e.preventDefault(); if(newCriterion.trim()) { onAddCriterion(newCriterion.trim()); setNewCriterion(''); } }} style={{ display: 'flex', gap: '8px' }}>
+          <form onSubmit={(e) => { e.preventDefault(); if (newCriterion.trim()) { onAddCriterion(newCriterion.trim()); setNewCriterion(''); } }} style={{ display: 'flex', gap: '8px' }}>
             <input
               type="text"
               value={newCriterion}
@@ -66,7 +80,7 @@ export default function ShopfloorMatrix({
 
         {/* -24h Historie Steuerung */}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <button 
+          <button
             type="button"
             onClick={() => setShowHistory(!showHistory)}
             style={{
@@ -80,37 +94,54 @@ export default function ShopfloorMatrix({
               cursor: 'pointer'
             }}
           >
-            {showHistory ? '⏱️ Verlaufspunkte ausblenden' : '⏱️ Verlaufspunkte einblenden'}
+            {showHistory ? 'Verlaufspunkte ausblenden' : 'Verlaufspunkte einblenden'}
           </button>
-          
+
           <span style={{ fontSize: '12px', backgroundColor: '#fef3c7', color: '#d97706', padding: '6px 14px', borderRadius: '9999px', fontWeight: '600', border: '1px solid #fde68a' }}>
             Shopfloor-Modus
           </span>
         </div>
       </div>
-            {/* Haupttabelle */}
+
+      {/* Haupttabelle */}
       <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', overflowX: 'auto', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05)' }}>
         <table style={{ borderCollapse: 'collapse', margin: '0', width: '100%', tableLayout: 'fixed' }}>
           <thead>
             <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-              <th style={{ width: '220px', minWidth: '220px', padding: '20px 24px', textAlign: 'left', borderRight: '1px solid #e2e8f0', verticalAlign: 'middle' }}>
+              <th style={{ width: '250px', minWidth: '250px', padding: '20px 24px', textAlign: 'left', borderRight: '1px solid #e2e8f0', verticalAlign: 'middle' }}>
                 <div style={{ fontSize: '16px', fontWeight: '800', letterSpacing: '-0.5px', color: '#0f172a' }}>Statusboard</div>
                 <div style={{ fontSize: '13px', color: '#3b82f6', fontWeight: '700', marginTop: '2px' }}>
                   {currentPanelName ? currentPanelName.replace('Gruppe ', '') : 'Gesamtübersicht'}
                 </div>
               </th>
 
-              {/* Dynamische Maschinenspalten */}
-              {machines.map((m) => (
-                <th key={m} style={{ width: '110px', minWidth: '110px', padding: '16px 8px', borderRight: '1px solid #e2e8f0', verticalAlign: 'middle', position: 'relative', textAlign: 'center' }}>
-                  <button 
-                    type="button"
-                    onClick={() => onDeleteMachine(m)} 
-                    style={{ position: 'absolute', top: '6px', right: '6px', fontSize: '10px', color: '#ef4444', backgroundColor: '#fee2e2', border: 'none', width: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                    title="Maschine entfernen"
-                  >
-                    ✕
-                  </button>
+              {/* Dynamische Maschinenspalten mit Verschiebe-Pfeilen und Lösch-Button */}
+              {machines.map((m, idx) => (
+                <th key={m} style={{ width: '120px', minWidth: '120px', padding: '12px 8px', borderRight: '1px solid #e2e8f0', verticalAlign: 'middle', position: 'relative', textAlign: 'center' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <div style={{ display: 'flex', gap: '2px' }}>
+                      {idx > 0 && (
+                        <button type="button" onClick={() => onMoveMachine(m, 'left')} style={arrowBtnStyle} title="Nach links verschieben">
+                          ←
+                        </button>
+                      )}
+                      {idx < machines.length - 1 && (
+                        <button type="button" onClick={() => onMoveMachine(m, 'right')} style={arrowBtnStyle} title="Nach rechts verschieben">
+                          →
+                        </button>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => onDeleteMachine(m)}
+                      style={{ fontSize: '10px', color: '#ef4444', backgroundColor: '#fee2e2', border: 'none', width: '18px', height: '18px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                      title="Maschine endgültig löschen"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
                   <div style={{ fontSize: '15px', fontWeight: '800', color: '#1e293b', marginBottom: '2px' }}>{m}</div>
                   <div style={{ fontSize: '11px', fontWeight: '600', color: '#94a3b8' }}>Maschine</div>
                 </th>
@@ -118,23 +149,35 @@ export default function ShopfloorMatrix({
               <th style={{ backgroundColor: '#f8fafc' }}></th>
             </tr>
           </thead>
-          
+
           <tbody>
-            {criteria.map((criterion) => (
+            {criteria.map((criterion, idx) => (
               <tr key={criterion} style={{ borderBottom: '1px solid #e2e8f0', transition: 'background-color 0.15s' }}>
-                
-                {/* Linke Beschriftung der Kategorie (Zeile) */}
-                <td style={{ padding: '16px 24px', borderRight: '1px solid #e2e8f0', backgroundColor: '#ffffff', verticalAlign: 'middle' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                    <span style={{ fontWeight: '700', fontSize: '14px', color: '#334155' }}>{criterion}</span>
-                    <button 
-                      type="button"
-                      onClick={() => onDeleteCriterion(criterion)} 
-                      style={{ fontSize: '10px', color: '#ef4444', backgroundColor: '#fee2e2', border: 'none', borderRadius: '50%', width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: '0', transition: 'all 0.15s' }}
-                      title="Kategorie entfernen"
-                    >
-                      ✕
-                    </button>
+                {/* Linke Beschriftung der Kategorie (Zeile) mit Pfeilen & Lösch-Button */}
+                <td style={{ padding: '14px 16px', borderRight: '1px solid #e2e8f0', backgroundColor: '#ffffff', verticalAlign: 'middle' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                    <span style={{ fontWeight: '700', fontSize: '14px', color: '#334155', wordBreak: 'break-word' }}>{criterion}</span>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                      {idx > 0 && (
+                        <button type="button" onClick={() => onMoveCriterion(criterion, 'up')} style={arrowBtnStyle} title="Nach oben verschieben">
+                          ↑
+                        </button>
+                      )}
+                      {idx < criteria.length - 1 && (
+                        <button type="button" onClick={() => onMoveCriterion(criterion, 'down')} style={arrowBtnStyle} title="Nach unten verschieben">
+                          ↓
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => onDeleteCriterion(criterion)}
+                        style={{ fontSize: '10px', color: '#ef4444', backgroundColor: '#fee2e2', border: 'none', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: '0', marginLeft: '4px' }}
+                        title="Kategorie endgültig löschen"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   </div>
                 </td>
 
@@ -143,28 +186,20 @@ export default function ShopfloorMatrix({
                   const key = `${machineId}-${criterion}`;
                   const cellData = data?.[key] || data?.cells?.[key];
                   const isRed = cellData?.status === 'red';
-                
-                  // 1. Zeitstempel für "vor 24 Stunden" berechnen
-                  const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
-                
-                  // 2. ALLE passenden Einträge der letzten 24h für diese spezifische Zelle filtern
+
+                                    const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
                   const cellHistoryEvents = historyLog?.filter(log => {
-                    // Falls dein log.timestamp ein ISO-String oder Datum ist, in Zeit umwandeln
-                    const logTime = new Date(log.timestamp || Date.now()).getTime(); 
+                    const logTime = new Date(log.timestamp || Date.now()).getTime();
                     const isRecent = logTime > twentyFourHoursAgo;
-                
-                    const matchesCell = 
+                    const matchesCell =
                       (log.type === 'Maschine' && log.name === machineId && log.note?.includes(`"${criterion}"`)) ||
                       (log.type === 'Kategorie' && log.name === criterion && log.note?.includes(`"${machineId}"`));
-                
                     return isRecent && matchesCell;
                   }) || [];
-                
+
                   return (
                     <td key={machineId} style={{ padding: '12px 8px', borderRight: '1px solid #e2e8f0', backgroundColor: '#ffffff', verticalAlign: 'middle', textAlign: 'center' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '4px' }}>
-                        
-                        {/* Die 3D-Ampel (Original-Design beibehalten) */}
                         <button
                           type="button"
                           onClick={() => onCellClick(machineId, criterion)}
@@ -174,52 +209,51 @@ export default function ShopfloorMatrix({
                             borderRadius: '50%',
                             border: 'none',
                             cursor: 'pointer',
-                            background: isRed 
-                              ? 'radial-gradient(circle at 35% 35%, #ff8787 0%, #ef4444 40%, #b91c1c 85%, #7f1d1d 100%)' 
+                            background: isRed
+                              ? 'radial-gradient(circle at 35% 35%, #ff8787 0%, #ef4444 40%, #b91c1c 85%, #7f1d1d 100%)'
                               : 'radial-gradient(circle at 35% 35%, #a7f3d0 0%, #10b981 40%, #047857 85%, #064e3b 100%)',
-                            boxShadow: isRed 
-                              ? '0 4px 10px rgba(239, 68, 68, 0.45), inset -2px -2px 6px rgba(0,0,0,0.6), inset 2px 2px 6px rgba(255,255,255,0.4)' 
+                            boxShadow: isRed
+                              ? '0 4px 10px rgba(239, 68, 68, 0.45), inset -2px -2px 6px rgba(0,0,0,0.6), inset 2px 2px 6px rgba(255,255,255,0.4)'
                               : '0 4px 10px rgba(16, 185, 129, 0.35), inset -2px -2px 6px rgba(0,0,0,0.6), inset 2px 2px 6px rgba(255,255,255,0.4)'
                           }}
                         />
-                
-                        {/* Inline-Verlaufswarnungen für ALLE Events der letzten 24h */}
+
                         {showHistory && cellHistoryEvents.length > 0 && (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '2px' }}>
-                            {cellHistoryEvents.map((event, idx) => (
-                              <div 
-                                key={idx}
+                            {cellHistoryEvents.map((event, i) => (
+                              <div
+                                key={i}
                                 title={`${event.note} um ${event.time || event.timestamp} Uhr`}
-                                style={{ 
-                                  fontSize: '10px', 
-                                  fontWeight: '700', 
-                                  color: '#991b1b', 
-                                  backgroundColor: '#fee2e2', 
-                                  padding: '1px 4px', 
+                                style={{
+                                  fontSize: '10px',
+                                  fontWeight: '700',
+                                  color: '#991b1b',
+                                  backgroundColor: '#fee2e2',
+                                  padding: '1px 4px',
                                   borderRadius: '4px',
                                   border: '1px solid #fca5a5',
                                   cursor: 'help',
                                   whiteSpace: 'nowrap'
                                 }}
                               >
-                                ⏱️ {event.time || new Date(event.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                {event.time || new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </div>
                             ))}
                           </div>
                         )}
-                
                       </div>
                     </td>
                   );
                 })}
-                 <td style={{ backgroundColor: '#ffffff' }}></td>
+                <td style={{ backgroundColor: '#ffffff' }}></td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-
     </div>
   );
 }
+
+
 
