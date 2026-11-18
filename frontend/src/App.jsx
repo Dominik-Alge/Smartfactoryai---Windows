@@ -5,6 +5,7 @@ import SupervisorView from './components/SupervisorView';
 import CockpitView from './components/CockpitView'; // Ergänzt am 18.11.2026
 import ActionEngine from './ActionEngine';
 import DeleteConfirmModal from './components/DeleteConfirmModal'; // Ergänzt am 18.11.2026
+import PinModal from './components/PinModal'; // Ergänzt am 18.11.2026
 
 // Ersetze das alte Skript hiermit (Nutzt das offizielle Play CDN):
 if (!document.getElementById('tailwind-cdn')) {
@@ -100,7 +101,16 @@ export default function App() {
   const [error, setError] = useState(null);
   const [showMemory, setShowMemory] = useState(false);
   const [currentView, setCurrentView] = useState('shopfloor');
-
+  const [pendingView, setPendingView] = useState(null); // 'cockpit' oder 'action-engine'
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  
+  const handleProtectedView = (targetView) => {
+    if (isUnlocked) {
+      setCurrentView(targetView);
+    } else {
+      setPendingView(targetView);
+    }
+  };
 
   // 1. Liste aller verfügbaren Mappen (Panels) laden
   const fetchPanels = async () => {
@@ -390,20 +400,19 @@ export default function App() {
         {!error && (
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setCurrentView('cockpit')}
+              onClick={() => handleProtectedView('cockpit')}
               className="bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-extrabold px-3 py-1.5 rounded-lg shadow transition-colors flex items-center gap-1"
             >
-              📺 Shopfloor Cockpit (TV)
+              Shopfloor Cockpit (TV)
             </button>
             <button 
-              onClick={() => setCurrentView('action-engine')}
+              onClick={() => handleProtectedView('action-engine')}
               className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition-colors flex items-center gap-1"
             >
-              🧠 Action Engine (Ebene 2)
+              Action Engine (Ebene 2)
             </button>
           </div>
         )}
-        
       </div>
         
             {/* DYNAMISCHE EXCEL-REGISTERKARTEN (Mappen-Auswahl) */}
@@ -543,7 +552,20 @@ export default function App() {
         onConfirm={executeConfirmedDelete}
       />
 
-
+            <PinModal
+        isOpen={pendingView !== null}
+        targetName={
+          pendingView === 'cockpit'
+            ? 'Shopfloor Cockpit (TV)'
+            : 'Action Engine (Ebene 2)'
+        }
+        onSuccess={() => {
+          setIsUnlocked(true);
+          setCurrentView(pendingView);
+          setPendingView(null);
+        }}
+        onClose={() => setPendingView(null)}
+      />
     </div>
   );
 }
