@@ -18,7 +18,6 @@ if (!document.getElementById('tailwind-cdn')) {
 // const API_URL = `http://${window.location.hostname}:5000`; // Version vom 18.11.2026
 const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
 
-
 const reasonOptions = {
   Maschine: [
     "Maschine steht",
